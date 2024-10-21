@@ -1,10 +1,12 @@
+import "dotenv/config";
+import './utils/otel';
 import Fastify, { FastifyReply, FastifyRequest } from "fastify";
 import fjwt, { FastifyJWT } from "@fastify/jwt";
 import fCookie from "@fastify/cookie";
 import rateLimit from "@fastify/rate-limit";
 import cors from "@fastify/cors";
 import fastifyRedis from "@fastify/redis";
-import "dotenv/config";
+import api, { SpanKind  } from "@opentelemetry/api";
 import { userSchemas } from "./concerns/user/user.schema";
 import { userRoutes } from "./concerns/user/user.route";
 import { profileSchemas } from "./concerns/profile/profile.schema";
@@ -14,8 +16,10 @@ import { contactSchemas } from "./concerns/contact/contact.schema";
 import { contactRoutes } from "./concerns/contact/contact.route";
 import { groupSchemas } from "./concerns/group/group.schema";
 import { groupRoutes } from "./concerns/group/group.route";
+import { logger } from "./utils/logger";
 
-export const app = Fastify({ logger: true });
+export const tracer = api.trace.getTracer('fastify-server');
+export const app = Fastify({ logger: process.env.NODE_ENV === "development" });
 const port = +process.env.PORT! || 3001;
 const host = process.env.HOST! || "localhost";
 
@@ -41,15 +45,43 @@ app.decorate(
   "authenticate",
   async (request: FastifyRequest, reply: FastifyReply) => {
     const token = request.cookies.access_token;
+    const span = tracer.startSpan('auth-middleware', {
+      kind: SpanKind.SERVER,
+    });
 
     if (!token) {
+      span.addEvent("Authentication failed");
+      span.end();
       return reply.status(401).send({ message: "Authentication required" });
     }
 
-    const decoded = request.jwt.verify<FastifyJWT["user"]>(token);
-    request.user = decoded;
+    try {
+      const decoded = request.jwt.verify<FastifyJWT["user"]>(token);
+      request.user = decoded;
+      span.setAttribute("user.id", decoded.id);
+      span.setAttribute("user.email", decoded.email);
+      span.end();
+    } catch (error) {
+      span.addEvent("Authentication failed");
+      span.end();
+      return reply.status(401).send({ message: "Authentication failed" });
+    }
   }
 );
+
+app.addHook("preHandler", (request, _reply, next) => {
+  const span = tracer.startSpan(request.url, {
+    kind: SpanKind.SERVER,
+  });
+
+  span.setAttribute("http.method", request.method);
+  span.setAttribute("http.url", request.url);
+
+  request.log.info({ spanId: span.spanContext().spanId }, "Request received");
+
+  request.span = span;
+  return next();
+});
 
 app.addHook("preHandler", (request, reply, next) => {
   request.jwt = app.jwt;
@@ -80,6 +112,17 @@ app.get("/healthcheck", async (request, reply) => {
   reply.send({ status: "ok" });
 });
 
+app.setErrorHandler((error, request, reply) => {
+  request.log.error(error);
+  logger.error(error);
+  reply.send({ message: error.message });
+});
+
+app.setNotFoundHandler((request, reply) => {
+  logger.warn("Route Not Found", { url: request.url });
+  reply.status(404).send({ message: "Not found" });
+});
+
 const listeners = ["SIGINT", "SIGTERM"];
 listeners.forEach((signal) => {
   process.on(signal, async () => {
@@ -90,6 +133,7 @@ listeners.forEach((signal) => {
 
 app.listen({ port, host }, async function (err, addr) {
   if (err) {
+    logger.error(err);
     app.log.error(err);
     process.exit(1);
   }

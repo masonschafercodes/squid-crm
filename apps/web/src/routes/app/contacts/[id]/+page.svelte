@@ -264,8 +264,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="flex gap-3 mt-3">
-                    <div class="flex flex-col gap-8 w-full">
+                <div class="flex gap-3 mt-3 overflow-hidden">
+                    <div
+                        class="flex flex-col gap-8 w-full h-full overflow-y-auto px-1"
+                    >
                         <div class="flex flex-col gap-1">
                             <div class="flex items-center justify-between">
                                 <span
@@ -380,7 +382,8 @@
                                                     >
                                                         Due {new Date(
                                                             task.dueAt
-                                                        ).toLocaleDateString()} @ {new Date(
+                                                        ).toLocaleDateString()} @
+                                                        {new Date(
                                                             task.dueAt
                                                         ).toLocaleTimeString()}
                                                     </span>

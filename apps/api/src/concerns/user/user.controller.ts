@@ -7,13 +7,19 @@ import {
 } from "./user.schema";
 import { db } from "../../utils/db";
 import { hash, verify } from "argon2";
+import { SpanKind } from "@opentelemetry/api";
+import { tracer } from "../..";
 
 export async function createUser(
   req: FastifyRequest<{ Body: CreateUserInput }>,
   reply: FastifyReply
 ) {
+  const span = tracer.startSpan('create-user', {
+    kind: SpanKind.SERVER,
+  });
   const { email, password } = req.body;
 
+  span.setAttribute("email", email);
   const user = await db.user.findUnique({
     where: {
       email,
@@ -21,12 +27,15 @@ export async function createUser(
   });
 
   if (user) {
+    span.addEvent("User already exists");
+    span.end();
     return reply.status(400).send({
       error: "Could't create user",
     });
   }
 
   try {
+    span.addEvent("Creating user");
     const hashedPassword = await hash(password);
     const newUser = await db.user.create({
       data: {
@@ -39,14 +48,21 @@ export async function createUser(
       throw new Error("Couldn't create user");
     }
 
+    span.setAttribute("user", JSON.stringify(newUser));
+    span.addEvent("User created");
+
     await db.userProfile.create({
       data: {
         userId: newUser.id,
       },
     });
 
+    span.addEvent("User profile created");
+    span.end()
+
     return reply.status(201).send(newUser);
   } catch (e: any) {
+    span.addEvent("User creation failed");
     return reply.status(500).send({
       error: e.message,
     });
@@ -57,6 +73,9 @@ export async function loginUser(
   req: FastifyRequest<{ Body: LoginUserInput }>,
   reply: FastifyReply
 ) {
+  const span = tracer.startSpan('login-user', {
+    kind: SpanKind.SERVER,
+  });
   const { email, password } = req.body;
 
   const user = await db.user.findUnique({
@@ -65,8 +84,18 @@ export async function loginUser(
     },
   });
 
+  if (!user) {
+    span.addEvent("User not found");
+    span.end();
+    return reply.status(401).send({
+      message: "Invalid email or password",
+    });
+  }
+
   const isMatch = user && (await verify(user.password, password));
   if (!user || !isMatch) {
+    span.addEvent("Invalid email or password");
+    span.end();
     return reply.code(401).send({
       message: "Invalid email or password",
     });
@@ -77,6 +106,7 @@ export async function loginUser(
     email: user.email,
   };
   const token = req.jwt.sign(payload);
+  span.setAttribute("user", JSON.stringify(payload));
 
   reply.setCookie("access_token", token, {
     path: "/",
@@ -85,6 +115,9 @@ export async function loginUser(
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 7, // 1 week
   });
+
+  span.addEvent("User logged in");
+  span.end();
 
   return { user: payload, accessToken: token };
 }
