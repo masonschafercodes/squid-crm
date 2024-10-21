@@ -39,7 +39,7 @@ model UserProfile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_profiles")
 }
@@ -51,7 +51,7 @@ model PasswordResetRequest {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("password_reset_requests")
 }
@@ -70,7 +70,7 @@ model Subscription {
   userId             String    @unique
   isUsageBased       Boolean   @default(false)
   subscriptionItemId Int?      @unique
-  user               User      @relation(fields: [userId], references: [id])
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   customerId         Int?
 
   @@index([lemonSqueezyId])
@@ -95,7 +95,7 @@ model Contact {
   birthday        DateTime?
   userId          String
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   customFieldValues CustomFieldValue[]
   historyEvents     ContactHistoryEvent[]
@@ -118,7 +118,7 @@ model ContactTask {
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
-  contact Contact @relation(fields: [contactId], references: [id])
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   @@map("contact_tasks")
 }
@@ -132,8 +132,8 @@ model ContactHistoryEvent {
   createdAt DateTime                @default(now())
   updatedAt DateTime                @updatedAt
 
-  contact Contact @relation(fields: [contactId], references: [id])
-  user    User    @relation(fields: [userId], references: [id])
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("contact_history_events")
 }
@@ -148,7 +148,7 @@ model CustomField {
 
   customFieldValues CustomFieldValue[]
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("custom_fields")
 }
@@ -158,7 +158,7 @@ model CustomFieldValue {
   value         String
   customField   CustomField @relation(fields: [customFieldId], references: [id])
   customFieldId String
-  contact       Contact     @relation(fields: [contactId], references: [id])
+  contact       Contact     @relation(fields: [contactId], references: [id], onDelete: Cascade)
   contactId     String
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -173,7 +173,7 @@ model ContactGroup {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   contacts Contact[]
 
