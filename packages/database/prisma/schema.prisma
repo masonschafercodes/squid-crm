@@ -1,0 +1,209 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile              UserProfile?
+  passwordResetRequest PasswordResetRequest?
+  subscriptions        Subscription[]
+  contacts             Contact[]
+  customFields         CustomField[]
+  contactHistoryEvents ContactHistoryEvent[]
+  contactGroups        ContactGroup[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  name      String?
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_profiles")
+}
+
+model PasswordResetRequest {
+  id        String   @id @default(cuid())
+  token     String
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("password_reset_requests")
+}
+
+model Subscription {
+  id                 String    @id @default(cuid())
+  lemonSqueezyId     Int       @unique
+  orderId            Int       @unique
+  name               String
+  email              String
+  status             String
+  renewsAt           DateTime?
+  endsAt             DateTime?
+  trialEndsAt        DateTime?
+  resumesAt          DateTime?
+  userId             String    @unique
+  isUsageBased       Boolean   @default(false)
+  subscriptionItemId Int?      @unique
+  user               User      @relation(fields: [userId], references: [id])
+  customerId         Int?
+
+  @@index([lemonSqueezyId])
+  @@map("subscriptions")
+}
+
+model Contact {
+  id              String    @id @default(cuid())
+  firstName       String
+  lastName        String
+  middleName      String?
+  suffix          String?
+  salutation      String?
+  workEmail       String?
+  personalEmail   String?
+  workPhone       String?
+  personalPhone   String?
+  workAddress     String?
+  personalAddress String?
+  jobTitle        String?
+  backgroundInfo  String?
+  birthday        DateTime?
+  userId          String
+
+  user User @relation(fields: [userId], references: [id])
+
+  customFieldValues CustomFieldValue[]
+  historyEvents     ContactHistoryEvent[]
+  tasks             ContactTask[]
+  groups            ContactGroup[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("contacts")
+}
+
+model ContactTask {
+  id          String            @id @default(cuid())
+  contactId   String
+  name        String
+  description String?
+  status      ContactTaskStatus @default(PENDING)
+  dueAt       DateTime
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  contact Contact @relation(fields: [contactId], references: [id])
+
+  @@map("contact_tasks")
+}
+
+model ContactHistoryEvent {
+  id        String                  @id @default(cuid())
+  contactId String
+  userId    String
+  type      ContactHistoryEventType
+  note      String?
+  createdAt DateTime                @default(now())
+  updatedAt DateTime                @updatedAt
+
+  contact Contact @relation(fields: [contactId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@map("contact_history_events")
+}
+
+model CustomField {
+  id        String          @id @default(cuid())
+  name      String
+  type      CustomFieldType
+  userId    String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  customFieldValues CustomFieldValue[]
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("custom_fields")
+}
+
+model CustomFieldValue {
+  id            String      @id @default(cuid())
+  value         String
+  customField   CustomField @relation(fields: [customFieldId], references: [id])
+  customFieldId String
+  contact       Contact     @relation(fields: [contactId], references: [id])
+  contactId     String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("custom_field_values")
+}
+
+model ContactGroup {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  contacts Contact[]
+
+  @@map("contact_groups")
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+}
+
+enum CustomFieldType {
+  TEXT
+  TEXTAREA
+  NUMBER
+  DATE
+}
+
+enum ContactHistoryEventType {
+  CREATED
+  UPDATED
+  NOTE
+  TASK_UPDATED
+  TASK_CREATED
+  GROUPS_ADDED
+  GROUP_REMOVED
+}
+
+enum ContactTaskStatus {
+  PENDING
+  DONE
+}
