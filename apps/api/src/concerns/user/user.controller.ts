@@ -5,7 +5,7 @@ import {
   LoginUserInput,
   ResetPasswordInput,
 } from "./user.schema";
-import { db } from "@/utils/db";
+import { db } from "../../utils/db";
 import { hash, verify } from "argon2";
 
 export async function createUser(

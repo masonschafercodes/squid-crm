@@ -5,6 +5,6 @@
       "@/*": ["./src/*"]
     },
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "."
   }
 }

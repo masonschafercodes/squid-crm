@@ -1,4 +1,4 @@
-import { db } from "@/utils/db";
+import { db } from "../../utils/db";
 import { FastifyReply, FastifyRequest } from "fastify";
 import {
   AddGroupsToContactInput,
@@ -249,7 +249,7 @@ export async function updateContactTask(
     },
   });
 
-  const taskIndex = contact.tasks.findIndex((t) => t.id === taskId);
+  const taskIndex = contact.tasks.findIndex((t: any) => t.id === taskId);
   contact.tasks[taskIndex] = task;
 
   if (status === "DONE") {
@@ -347,7 +347,7 @@ export async function addGroupsToContact(
   }
 
   const groupIdsToAdd = groupIds.filter(
-    (groupId) => !contact.groups.some((group) => group.id === groupId)
+    (groupId) => !contact.groups.some((group: any) => group.id === groupId)
   );
 
   if (groupIdsToAdd.length === 0) {
@@ -368,7 +368,7 @@ export async function addGroupsToContact(
     },
     data: {
       groups: {
-        connect: groups.map((group) => ({
+        connect: groups.map((group: any) => ({
           id: group.id,
         })),
       },
@@ -398,7 +398,7 @@ export async function addGroupsToContact(
       userId: req.user.id,
       contactId: updatedContact.id,
       type: "GROUPS_ADDED",
-      note: `Added to groups: ${groups.map((group) => group.name).join(", ")}`,
+      note: `Added to groups: ${groups.map((group: any) => group.name).join(", ")}`,
     },
   });
 

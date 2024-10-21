@@ -1,4 +1,4 @@
-import { db } from "@/utils/db";
+import { db } from "../../utils/db";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { CreateOrUpdateProfileInput } from "./profile.schema";
 

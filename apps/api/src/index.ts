@@ -17,6 +17,7 @@ import { groupRoutes } from "./concerns/group/group.route";
 
 export const app = Fastify({ logger: true });
 const port = +process.env.PORT! || 3001;
+const host = process.env.HOST! || "localhost";
 
 app.register(cors, {
   origin: ["http://localhost:3000", "http://localhost:5173"],
@@ -87,7 +88,7 @@ listeners.forEach((signal) => {
   });
 });
 
-app.listen({ port }, async function (err, addr) {
+app.listen({ port, host }, async function (err, addr) {
   if (err) {
     app.log.error(err);
     process.exit(1);

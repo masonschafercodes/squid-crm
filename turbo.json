@@ -20,6 +20,12 @@
         "^db:migrate"
       ]
     },
+    "start": {
+      "cache": false,
+      "dependsOn": [
+        "^start"
+      ]
+    },
     "build": {
       "dependsOn": [
         "^build"
@@ -31,7 +37,8 @@
       "outputs": [
         ".next/**",
         "!.next/cache/**",
-        ".svelte-kit/**"
+        ".svelte-kit/**",
+        "dist/**"
       ]
     },
     "lint": {
