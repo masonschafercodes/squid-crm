@@ -1,179 +1,200 @@
 import { FastifyInstance } from "fastify";
 import { $ref } from "./contact.schema";
 import {
-  addGroupsToContact,
-  createContact,
-  createContactHistoryEventNote,
-  createContactTask,
-  getContact,
-  getContacts,
-  removeGroupFromContact,
-  updateContactTask,
+    addGroupsToContact,
+    createContact,
+    createContactHistoryEventNote,
+    createContactTask,
+    getContact,
+    getContacts,
+    removeGroupFromContact,
+    updateContact,
+    updateContactTask,
 } from "./contact.controller";
 
 export async function contactRoutes(app: FastifyInstance) {
-  app.get(
-    "/",
-    {
-      preHandler: [app.authenticate],
-      config: {
-        rateLimit: {
-          max: 500,
-          timeWindow: 5000,
+    app.get(
+        "/",
+        {
+            preHandler: [app.authenticate],
+            config: {
+                rateLimit: {
+                    max: 500,
+                    timeWindow: 5000,
+                },
+            },
+            schema: {
+                response: {
+                    200: $ref("getContactResponseSchemaArray"),
+                },
+            },
         },
-      },
-      schema: {
-        response: {
-          200: $ref("getContactResponseSchemaArray"),
-        },
-      },
-    },
-    getContacts
-  );
+        getContacts
+    );
 
-  app.get(
-    "/:id",
-    {
-      preHandler: [app.authenticate],
-      config: {
-        rateLimit: {
-          max: 500,
-          timeWindow: 5000,
+    app.get(
+        "/:id",
+        {
+            preHandler: [app.authenticate],
+            config: {
+                rateLimit: {
+                    max: 500,
+                    timeWindow: 5000,
+                },
+            },
+            schema: {
+                response: {
+                    200: $ref("getContactResponseSchema"),
+                },
+                params: {
+                    type: "object",
+                    properties: {
+                        id: { type: "string" },
+                    },
+                },
+            },
         },
-      },
-      schema: {
-        response: {
-          200: $ref("getContactResponseSchema"),
-        },
-        params: {
-          type: "object",
-          properties: {
-            id: { type: "string" },
-          },
-        },
-      },
-    },
-    getContact
-  );
+        getContact
+    );
 
-  app.post(
-    "/",
-    {
-      preHandler: [app.authenticate],
-      config: {
-        rateLimit: {
-          max: 500,
-          timeWindow: 5000,
+    app.post(
+        "/",
+        {
+            preHandler: [app.authenticate],
+            config: {
+                rateLimit: {
+                    max: 500,
+                    timeWindow: 5000,
+                },
+            },
+            schema: {
+                body: $ref("createContactSchema"),
+                response: {
+                    200: $ref("getContactResponseSchema"),
+                },
+            },
         },
-      },
-      schema: {
-        body: $ref("createContactSchema"),
-        response: {
-          200: $ref("getContactResponseSchema"),
-        },
-      },
-    },
-    createContact
-  );
+        createContact
+    );
 
-  app.post(
-    "/:id/notes",
-    {
-      preHandler: [app.authenticate],
-      config: {
-        rateLimit: {
-          max: 500,
-          timeWindow: 5000,
+    app.patch(
+        "/",
+        {
+            preHandler: [app.authenticate],
+            config: {
+                rateLimit: {
+                    max: 500,
+                    timeWindow: 5000,
+                },
+            },
+            schema: {
+                body: $ref("updateContactSchema"),
+                response: {
+                    200: $ref("getContactResponseSchema"),
+                },
+            },
         },
-      },
-      schema: {
-        body: $ref("createContactHistoryEventNoteSchema"),
-        response: {
-          200: $ref("getContactResponseSchema"),
-        },
-      },
-    },
-    createContactHistoryEventNote
-  );
+        updateContact
+    );
 
-  app.post(
-    "/:id/tasks",
-    {
-      preHandler: [app.authenticate],
-      config: {
-        rateLimit: {
-          max: 500,
-          timeWindow: 5000,
+    app.post(
+        "/:id/notes",
+        {
+            preHandler: [app.authenticate],
+            config: {
+                rateLimit: {
+                    max: 500,
+                    timeWindow: 5000,
+                },
+            },
+            schema: {
+                body: $ref("createContactHistoryEventNoteSchema"),
+                response: {
+                    200: $ref("getContactResponseSchema"),
+                },
+            },
         },
-      },
-      schema: {
-        body: $ref("createContactTaskSchema"),
-        response: {
-          200: $ref("getContactResponseSchema"),
-        },
-      },
-    },
-    createContactTask
-  );
+        createContactHistoryEventNote
+    );
 
-  app.patch(
-    "/:id/tasks/:taskId",
-    {
-      preHandler: [app.authenticate],
-      config: {
-        rateLimit: {
-          max: 500,
-          timeWindow: 5000,
+    app.post(
+        "/:id/tasks",
+        {
+            preHandler: [app.authenticate],
+            config: {
+                rateLimit: {
+                    max: 500,
+                    timeWindow: 5000,
+                },
+            },
+            schema: {
+                body: $ref("createContactTaskSchema"),
+                response: {
+                    200: $ref("getContactResponseSchema"),
+                },
+            },
         },
-      },
-      schema: {
-        body: $ref("updateContactTaskSchema"),
-        response: {
-          200: $ref("getContactResponseSchema"),
-        },
-      },
-    },
-    updateContactTask
-  );
+        createContactTask
+    );
 
-  app.patch(
-    "/:id/groups",
-    {
-      preHandler: [app.authenticate],
-      config: {
-        rateLimit: {
-          max: 500,
-          timeWindow: 5000,
+    app.patch(
+        "/:id/tasks/:taskId",
+        {
+            preHandler: [app.authenticate],
+            config: {
+                rateLimit: {
+                    max: 500,
+                    timeWindow: 5000,
+                },
+            },
+            schema: {
+                body: $ref("updateContactTaskSchema"),
+                response: {
+                    200: $ref("getContactResponseSchema"),
+                },
+            },
         },
-      },
-      schema: {
-        body: $ref("addGroupsToContactSchema"),
-        response: {
-          200: $ref("getContactResponseSchema"),
-        },
-      },
-    },
-    addGroupsToContact
-  );
+        updateContactTask
+    );
 
-  app.delete(
-    "/:id/groups/:groupId",
-    {
-      preHandler: [app.authenticate],
-      config: {
-        rateLimit: {
-          max: 500,
-          timeWindow: 5000,
+    app.patch(
+        "/:id/groups",
+        {
+            preHandler: [app.authenticate],
+            config: {
+                rateLimit: {
+                    max: 500,
+                    timeWindow: 5000,
+                },
+            },
+            schema: {
+                body: $ref("addGroupsToContactSchema"),
+                response: {
+                    200: $ref("getContactResponseSchema"),
+                },
+            },
         },
-      },
-      schema: {
-        response: {
-          200: $ref("getContactResponseSchema"),
-        },
-      },
-    },
-    removeGroupFromContact
-  );
+        addGroupsToContact
+    );
 
-  app.log.info("Contact routes registered");
+    app.delete(
+        "/:id/groups/:groupId",
+        {
+            preHandler: [app.authenticate],
+            config: {
+                rateLimit: {
+                    max: 500,
+                    timeWindow: 5000,
+                },
+            },
+            schema: {
+                response: {
+                    200: $ref("getContactResponseSchema"),
+                },
+            },
+        },
+        removeGroupFromContact
+    );
+
+    app.log.info("Contact routes registered");
 }

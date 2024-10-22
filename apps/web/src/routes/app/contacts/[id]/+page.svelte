@@ -112,6 +112,17 @@
             console.error(error);
         }
     }
+
+    function getAge(birthday: string) {
+        const birthDate = new Date(birthday);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age;
+    }
 </script>
 
 <head>
@@ -188,7 +199,7 @@
                         class="p-3 flex items-center justify-between hover:bg-zinc-100/40"
                         on:click={() => addContactSheetOpen.set(true)}
                     >
-                        <span class="text-sm text-zinc-700/90 font-semibold"
+                        <span class="text-sm text-zinc-700/90"
                             >Edit Contact</span
                         >
                         <EditIcon class="w-4 h-4 text-zinc-700/60" />
@@ -196,17 +207,13 @@
                     <button
                         class="p-3 flex items-center justify-between hover:bg-zinc-100/40"
                     >
-                        <span class="text-sm text-zinc-700/90 font-semibold"
-                            >Print</span
-                        >
+                        <span class="text-sm text-zinc-700/90">Print</span>
                         <PrintIcon class="w-4 h-4 text-zinc-700/60" />
                     </button>
                     <button
                         class="p-3 flex items-center justify-between hover:bg-zinc-100/40"
                     >
-                        <span class="text-sm text-zinc-700/90 font-semibold"
-                            >Delete</span
-                        >
+                        <span class="text-sm text-zinc-700/90">Delete</span>
                         <TrashIcon class="w-4 h-4 text-zinc-700/60" />
                     </button>
                 </div>
@@ -785,7 +792,7 @@
                             Contact Info
                         </span>
                         <div
-                            class="p-3 bg-white border border-zinc-400/20 shadow-sm rounded-lg flex flex-col gap-3"
+                            class="p-4 bg-white border border-zinc-400/20 shadow-sm rounded-lg flex flex-col gap-3"
                         >
                             <ContactInfoDetail
                                 label="Name"
@@ -819,6 +826,12 @@
                             <ContactInfoDetail
                                 label="Work Address"
                                 value={$selectedContact?.workAddress || "N/A"}
+                            />
+                            <ContactInfoDetail
+                                label="Birthday"
+                                value={$selectedContact?.birthday
+                                    ? `${new Date($selectedContact?.birthday).toLocaleDateString()} - ${getAge($selectedContact?.birthday)} years old`
+                                    : "N/A"}
                             />
                             <ContactInfoDetail
                                 label="Background Info"

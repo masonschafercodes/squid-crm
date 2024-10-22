@@ -9,16 +9,16 @@
     import fetcher from "$lib/fetcher";
     import { contacts, selectedContact } from "$lib/store/contacts";
     import SpinnerIcon from "../icons/SpinnerIcon.svelte";
+    import { addToast } from "$lib/store/toasts";
 
     export let open = false;
     export let close = () => {};
     export let isEdit = false;
-    export let defaultContact: Contact = {
+    export let defaultContact: ContactWithoutId = {
         firstName: "",
         lastName: "",
-        id: "",
         backgroundInfo: "",
-        birthday: "",
+        birthday: undefined,
         jobTitle: "",
         middleName: "",
         personalAddress: "",
@@ -31,21 +31,25 @@
         workPhone: "",
         historyEvents: [],
         tasks: [],
+        groups: [],
     };
 
     const addContactLoading = writable(false);
-    const createContactRecord = writable<Contact>(defaultContact);
+    const createContactRecord = writable<ContactWithoutId>(defaultContact);
 
     async function handleCreateContact() {
         addContactLoading.set(true);
         try {
             const newContact = await fetcher<Contact>("/contacts", {
-                method: "POST",
+                method: isEdit ? "PATCH" : "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 credentials: "include",
-                body: JSON.stringify($createContactRecord),
+                body: JSON.stringify({
+                    ...$createContactRecord,
+                    id: isEdit ? $selectedContact?.id : undefined,
+                }),
             });
 
             contacts.update((prev) => {
@@ -63,8 +67,17 @@
             });
             selectedContact.set(newContact);
             close();
+
+            addToast(
+                "Success",
+                `Successfully ${isEdit ? "updated" : "created"} contact`
+            );
             addContactLoading.set(false);
         } catch (e) {
+            addToast(
+                "Error",
+                `Failed to ${isEdit ? "update" : "create"} contact`
+            );
             addContactLoading.set(false);
             console.error(e);
         }

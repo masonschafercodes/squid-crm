@@ -41,14 +41,6 @@ app.register(rateLimit, {
 
 app.register(fjwt, { secret: process.env.JWT_SECRET! });
 
-// some otel decorators for convenience
-
-app.decorate("newSpan", (name: string) => {
-    return tracer.startSpan(name, {
-        kind: SpanKind.SERVER,
-    });
-});
-
 app.decorate(
     "authenticate",
     async (request: FastifyRequest, reply: FastifyReply) => {

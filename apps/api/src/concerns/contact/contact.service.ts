@@ -1,27 +1,6 @@
 import { ContactHistoryEventType } from "@repo/db";
 import { db } from "../../utils/db";
-import { CreateContactInput } from "./contact.schema";
-
-const DEFAULT_CONTACT_INCLUDE = {
-    include: {
-        groups: {
-            select: {
-                id: true,
-                name: true,
-            },
-        },
-        historyEvents: {
-            orderBy: {
-                createdAt: "desc",
-            },
-        },
-        tasks: {
-            orderBy: {
-                dueAt: "asc",
-            },
-        },
-    },
-};
+import { CreateContactInput, UpdateContactInput } from "./contact.schema";
 
 export async function getContactByContactIdByUserId(
     contactId: string,
@@ -53,45 +32,49 @@ export async function getContactByContactIdByUserId(
     });
 }
 
-export async function upsertContact(
+export async function createNewContact(
     contact: CreateContactInput,
     userId: string
 ) {
-    return await db.contact.upsert({
-        create: {
-            userId: userId,
-            firstName: contact.firstName,
-            lastName: contact.lastName,
-            middleName: contact.middleName,
-            suffix: contact.suffix,
-            salutation: contact.salutation,
-            workEmail: contact.workEmail,
-            personalEmail: contact.personalEmail,
-            workPhone: contact.workPhone,
-            personalPhone: contact.personalPhone,
-            workAddress: contact.workAddress,
-            personalAddress: contact.personalAddress,
-            jobTitle: contact.jobTitle,
-            backgroundInfo: contact.backgroundInfo,
+    return await db.contact.create({
+        data: {
+            ...contact,
+            userId,
+            birthday: contact.birthday ? new Date(contact.birthday) : undefined,
         },
-        update: {
-            firstName: contact.firstName,
-            lastName: contact.lastName,
-            middleName: contact.middleName,
-            suffix: contact.suffix,
-            salutation: contact.salutation,
-            workEmail: contact.workEmail,
-            personalEmail: contact.personalEmail,
-            workPhone: contact.workPhone,
-            personalPhone: contact.personalPhone,
-            workAddress: contact.workAddress,
-            personalAddress: contact.personalAddress,
-            jobTitle: contact.jobTitle,
-            backgroundInfo: contact.backgroundInfo,
+        include: {
+            groups: {
+                select: {
+                    id: true,
+                    name: true,
+                },
+            },
+            historyEvents: {
+                orderBy: {
+                    createdAt: "desc",
+                },
+            },
+            tasks: {
+                orderBy: {
+                    dueAt: "asc",
+                },
+            },
         },
+    });
+}
+
+export async function updateExistingContact(
+    contact: UpdateContactInput,
+    userId: string
+) {
+    return await db.contact.update({
         where: {
             id: contact.id,
-            userId: userId,
+            userId,
+        },
+        data: {
+            ...contact,
+            birthday: contact.birthday ? new Date(contact.birthday) : undefined,
         },
         include: {
             groups: {

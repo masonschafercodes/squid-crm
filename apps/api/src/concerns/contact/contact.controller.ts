@@ -5,14 +5,16 @@ import {
     CreateContactHistoryEventNoteInput,
     CreateContactInput,
     CreateContactTaskInput,
+    UpdateContactInput,
     UpdateContactTaskInput,
 } from "./contact.schema";
 import { SpanKind, context, trace } from "@opentelemetry/api";
-import { tracer } from "../..";
+import { app, tracer } from "../..";
 import {
     createContactHistoryEvent,
+    createNewContact,
     getContactByContactIdByUserId,
-    upsertContact,
+    updateExistingContact,
 } from "./contact.service";
 
 export async function getContact(
@@ -71,20 +73,51 @@ export async function createContact(
     const span = tracer.startSpan("create-contact", {
         kind: SpanKind.SERVER,
     });
-    const contact = await upsertContact(req.body, req.user.id);
+    try {
+        const newContact = await createNewContact(req.body, req.user.id);
 
-    if (contact && req.body.id) {
+        if (newContact) {
+            const historyEvent = await createContactHistoryEvent(
+                req.user.id,
+                newContact.id,
+                "CREATED"
+            );
+
+            newContact.historyEvents.unshift(historyEvent);
+        }
+
+        span.addEvent("Contact created");
+        span.end();
+        return reply.send(newContact);
+    } catch (error) {
+        app.log.error(error);
+        span.addEvent("Error creating contact");
+        span.end();
+        return reply.status(500).send();
+    }
+}
+
+export async function updateContact(
+    req: FastifyRequest<{ Body: UpdateContactInput }>,
+    reply: FastifyReply
+) {
+    const span = tracer.startSpan("update-contact", {
+        kind: SpanKind.SERVER,
+    });
+    const updatedContact = await updateExistingContact(req.body, req.user.id);
+
+    if (updatedContact) {
         const historyEvent = await createContactHistoryEvent(
-            contact.id,
             req.user.id,
+            updatedContact.id,
             "UPDATED"
         );
-        contact.historyEvents.unshift(historyEvent);
-        span.addEvent("Contact updated");
+        updatedContact.historyEvents.unshift(historyEvent);
     }
 
+    span.addEvent("Contact updated");
     span.end();
-    return reply.send(contact);
+    return reply.send(updatedContact);
 }
 
 export async function createContactTask(
@@ -153,6 +186,13 @@ export async function createContactTask(
                                     break;
                                 }
                             }
+                        }
+
+                        if (!contact.tasks.includes(task)) {
+                            contact.tasks.push(task);
+                            createContactTaskSpan.addEvent(
+                                "Task added to end of list"
+                            );
                         }
                     } else {
                         contact.tasks.push(task);
