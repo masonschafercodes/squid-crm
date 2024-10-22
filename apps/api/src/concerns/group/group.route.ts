@@ -19,7 +19,7 @@ export async function groupRoutes(app: FastifyInstance) {
         },
       },
     },
-    getGroups
+    getGroups,
   );
 
   app.post(
@@ -39,7 +39,7 @@ export async function groupRoutes(app: FastifyInstance) {
         },
       },
     },
-    createGroup
+    createGroup,
   );
 
   app.log.info("Group routes registered");

@@ -16,7 +16,7 @@ lemonSqueezySetup({
 
 export async function handleLemonSqueezyWebhook(
   req: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const reqBody = req.body as any;
@@ -101,7 +101,7 @@ export async function handleLemonSqueezyWebhook(
 
 export async function handleCancelLemonSqueezySubscription(
   req: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const payment = await db.subscription.findFirst({
@@ -118,7 +118,7 @@ export async function handleCancelLemonSqueezySubscription(
     }
 
     const { statusCode, error, data } = await cancelSubscription(
-      payment.lemonSqueezyId
+      payment.lemonSqueezyId,
     );
 
     if (error || !data) {
@@ -135,7 +135,7 @@ export async function handleCancelLemonSqueezySubscription(
 
 export async function handleLemonSqueezyCheckout(
   req: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const attributes: NewCheckout = {
     checkoutOptions: {
@@ -173,7 +173,7 @@ export async function handleLemonSqueezyCheckout(
     const { statusCode, error, data } = await createCheckout(
       129160,
       556162,
-      attributes
+      attributes,
     );
 
     if (error || !data) {
@@ -192,7 +192,7 @@ export async function handleLemonSqueezyCheckout(
 
 export async function handleGetPayments(
   req: FastifyRequest,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   try {
     const payments = await db.subscription.findMany({

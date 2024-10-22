@@ -2,6 +2,11 @@
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
   "tasks": {
+    "prettier:write": {
+      "dependsOn": [
+        "^prettier:write"
+      ]
+    },
     "db:generate": {
       "cache": false,
       "dependsOn": [

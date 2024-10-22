@@ -18,7 +18,7 @@ export async function paymentRoutes(app: FastifyInstance) {
         },
       },
     },
-    handleGetPayments
+    handleGetPayments,
   );
 
   app.post(
@@ -32,7 +32,7 @@ export async function paymentRoutes(app: FastifyInstance) {
         },
       },
     },
-    handleCancelLemonSqueezySubscription
+    handleCancelLemonSqueezySubscription,
   );
 
   app.post(
@@ -45,7 +45,7 @@ export async function paymentRoutes(app: FastifyInstance) {
         },
       },
     },
-    handleLemonSqueezyWebhook
+    handleLemonSqueezyWebhook,
   );
 
   app.post(
@@ -59,7 +59,7 @@ export async function paymentRoutes(app: FastifyInstance) {
         },
       },
     },
-    handleLemonSqueezyCheckout
+    handleLemonSqueezyCheckout,
   );
   app.log.info("Payment routes registered");
 }

@@ -17,7 +17,7 @@ export async function getGroups(req: FastifyRequest, reply: FastifyReply) {
 
 export async function createGroup(
   req: FastifyRequest<{ Body: CreateGroupInput }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { name } = req.body;
 

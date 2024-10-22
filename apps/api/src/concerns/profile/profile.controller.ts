@@ -20,7 +20,7 @@ export async function getProfile(req: FastifyRequest, reply: FastifyReply) {
 
 export async function createOrUpdateProfile(
   req: FastifyRequest<{ Body: CreateOrUpdateProfileInput }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) {
   const { name, bio } = req.body;
 

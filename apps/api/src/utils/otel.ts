@@ -10,28 +10,28 @@ import { BunyanInstrumentation } from "@opentelemetry/instrumentation-bunyan";
 diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.WARN);
 
 const sdk = new NodeSDK({
-    logRecordProcessors: [
-        new logs.SimpleLogRecordProcessor(new OTLPLogExporter()),
-    ],
-    instrumentations: [
-        new HttpInstrumentation({
-            enabled: process.env.NODE_ENV !== "test",
-        }),
-        new FastifyInstrumentation({
-            enabled: process.env.NODE_ENV !== "test",
-        }),
-        new BunyanInstrumentation({
-            enabled: process.env.NODE_ENV !== "test",
-        }),
-    ],
-    traceExporter: new OTLPTraceExporter({
-        url: "https://api.honeycomb.io/v1/traces",
+  logRecordProcessors: [
+    new logs.SimpleLogRecordProcessor(new OTLPLogExporter()),
+  ],
+  instrumentations: [
+    new HttpInstrumentation({
+      enabled: process.env.NODE_ENV !== "test",
     }),
-    serviceName: "squid-crm-api",
+    new FastifyInstrumentation({
+      enabled: process.env.NODE_ENV !== "test",
+    }),
+    new BunyanInstrumentation({
+      enabled: process.env.NODE_ENV !== "test",
+    }),
+  ],
+  traceExporter: new OTLPTraceExporter({
+    url: "https://api.honeycomb.io/v1/traces",
+  }),
+  serviceName: "squid-crm-api",
 });
 
 process.on("beforeExit", async () => {
-    await sdk.shutdown().finally(() => process.exit(0));
+  await sdk.shutdown().finally(() => process.exit(0));
 });
 
 sdk.start();

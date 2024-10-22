@@ -19,7 +19,7 @@ export async function profileRoutes(app: FastifyInstance) {
         },
       },
     },
-    getProfile
+    getProfile,
   );
 
   app.post(
@@ -39,7 +39,7 @@ export async function profileRoutes(app: FastifyInstance) {
         },
       },
     },
-    createOrUpdateProfile
+    createOrUpdateProfile,
   );
 
   app.log.info("Profile routes registered");

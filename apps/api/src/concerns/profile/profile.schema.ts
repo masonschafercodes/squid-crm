@@ -25,5 +25,5 @@ export const { schemas: profileSchemas, $ref } = buildJsonSchemas(
   },
   {
     $id: "profile",
-  }
+  },
 );

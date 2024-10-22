@@ -63,5 +63,5 @@ export const { schemas: userSchemas, $ref } = buildJsonSchemas(
   },
   {
     $id: "user",
-  }
+  },
 );

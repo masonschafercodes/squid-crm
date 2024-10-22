@@ -24,5 +24,5 @@ export const { schemas: groupSchemas, $ref } = buildJsonSchemas(
   },
   {
     $id: "group",
-  }
+  },
 );
