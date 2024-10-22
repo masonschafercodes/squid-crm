@@ -9,7 +9,11 @@ import {
 } from "./contact.schema";
 import { SpanKind, context, trace } from "@opentelemetry/api";
 import { tracer } from "../..";
-import { getContactByContactIdByUserId } from "./contact.service";
+import {
+    createContactHistoryEvent,
+    getContactByContactIdByUserId,
+    upsertContact,
+} from "./contact.service";
 
 export async function getContact(
     req: FastifyRequest<{ Params: { id: string } }>,
@@ -18,6 +22,7 @@ export async function getContact(
     const getContactSpan = tracer.startSpan("get-contact", {
         kind: SpanKind.SERVER,
     });
+    const { id: contactId } = req.params;
 
     let contact: any;
 
@@ -28,30 +33,10 @@ export async function getContact(
                 kind: SpanKind.SERVER,
             });
 
-            contact = await db.contact.findUnique({
-                where: {
-                    id: req.params.id,
-                    userId: req.user.id,
-                },
-                include: {
-                    groups: {
-                        select: {
-                            id: true,
-                            name: true,
-                        },
-                    },
-                    historyEvents: {
-                        orderBy: {
-                            createdAt: "desc",
-                        },
-                    },
-                    tasks: {
-                        orderBy: {
-                            dueAt: "asc",
-                        },
-                    },
-                },
-            });
+            contact = await getContactByContactIdByUserId(
+                contactId,
+                req.user.id
+            );
 
             querySpan.end();
         }
@@ -72,6 +57,7 @@ export async function getContacts(req: FastifyRequest, reply: FastifyReply) {
         orderBy: {
             firstName: "asc",
         },
+        take: 100,
     });
 
     span.end();
@@ -85,87 +71,14 @@ export async function createContact(
     const span = tracer.startSpan("create-contact", {
         kind: SpanKind.SERVER,
     });
-    const {
-        id,
-        firstName,
-        lastName,
-        middleName,
-        suffix,
-        salutation,
-        workEmail,
-        personalEmail,
-        workPhone,
-        personalPhone,
-        workAddress,
-        personalAddress,
-        jobTitle,
-        backgroundInfo,
-    } = req.body;
+    const contact = await upsertContact(req.body, req.user.id);
 
-    const contact = await db.contact.upsert({
-        create: {
-            userId: req.user.id,
-            firstName,
-            lastName,
-            middleName,
-            suffix,
-            salutation,
-            workEmail,
-            personalEmail,
-            workPhone,
-            personalPhone,
-            workAddress,
-            personalAddress,
-            jobTitle,
-            backgroundInfo,
-        },
-        update: {
-            firstName,
-            lastName,
-            middleName,
-            suffix,
-            salutation,
-            workEmail,
-            personalEmail,
-            workPhone,
-            personalPhone,
-            workAddress,
-            personalAddress,
-            jobTitle,
-            backgroundInfo,
-        },
-        where: {
-            id,
-            userId: req.user.id,
-        },
-        include: {
-            groups: {
-                select: {
-                    id: true,
-                    name: true,
-                },
-            },
-            historyEvents: {
-                orderBy: {
-                    createdAt: "desc",
-                },
-            },
-            tasks: {
-                orderBy: {
-                    dueAt: "asc",
-                },
-            },
-        },
-    });
-
-    if (contact && id) {
-        const historyEvent = await db.contactHistoryEvent.create({
-            data: {
-                userId: req.user.id,
-                contactId: contact.id,
-                type: "UPDATED",
-            },
-        });
+    if (contact && req.body.id) {
+        const historyEvent = await createContactHistoryEvent(
+            contact.id,
+            req.user.id,
+            "UPDATED"
+        );
         contact.historyEvents.unshift(historyEvent);
         span.addEvent("Contact updated");
     }
@@ -260,14 +173,11 @@ export async function createContactTask(
                                 );
 
                             const newHistoryEvent =
-                                await db.contactHistoryEvent.create({
-                                    data: {
-                                        userId: req.user.id,
-                                        contactId: contact.id,
-                                        type: "TASK_CREATED",
-                                    },
-                                });
-
+                                await createContactHistoryEvent(
+                                    req.user.id,
+                                    contact.id,
+                                    "TASK_CREATED"
+                                );
                             contact.historyEvents.unshift(newHistoryEvent);
 
                             createContactHistoryEventSpan.addEvent(
@@ -328,14 +238,12 @@ export async function updateContactTask(
     span.addEvent("Task updated in list");
 
     if (status === "DONE") {
-        const newEvent = await db.contactHistoryEvent.create({
-            data: {
-                userId: req.user.id,
-                contactId: contact.id,
-                type: "TASK_UPDATED",
-                note: `Task "${task.name}" marked as done`,
-            },
-        });
+        const newEvent = await createContactHistoryEvent(
+            req.user.id,
+            contact.id,
+            "TASK_UPDATED",
+            `Task "${task.name}" marked as done`
+        );
 
         contact.historyEvents.unshift(newEvent);
 
@@ -368,14 +276,12 @@ export async function createContactHistoryEventNote(
 
     span.addEvent("Contact found");
 
-    const historyEvent = await db.contactHistoryEvent.create({
-        data: {
-            userId: req.user.id,
-            contactId: contact.id,
-            type: "NOTE",
-            note: note,
-        },
-    });
+    const historyEvent = await createContactHistoryEvent(
+        req.user.id,
+        contact.id,
+        "NOTE",
+        note
+    );
 
     span.addEvent("History event created");
 
@@ -479,14 +385,12 @@ export async function addGroupsToContact(
 
     span.addEvent("Groups added");
 
-    const historyEvent = await db.contactHistoryEvent.create({
-        data: {
-            userId: req.user.id,
-            contactId: updatedContact.id,
-            type: "GROUPS_ADDED",
-            note: `Added to groups: ${groups.map((group: any) => group.name).join(", ")}`,
-        },
-    });
+    const historyEvent = await createContactHistoryEvent(
+        req.user.id,
+        updatedContact.id,
+        "GROUPS_ADDED",
+        `Added to groups: ${groups.map((group: any) => group.name).join(", ")}`
+    );
 
     span.addEvent("History event created");
 
@@ -562,14 +466,12 @@ export async function removeGroupFromContact(
         return reply.status(404).send();
     }
 
-    const historyEvent = await db.contactHistoryEvent.create({
-        data: {
-            userId: req.user.id,
-            contactId: updatedContact.id,
-            type: "GROUP_REMOVED",
-            note: `Removed from group: ${removedGroup?.name}`,
-        },
-    });
+    const historyEvent = await createContactHistoryEvent(
+        req.user.id,
+        updatedContact.id,
+        "GROUP_REMOVED",
+        `Removed from group: ${removedGroup.name}`
+    );
 
     span.addEvent("History event created");
 
