@@ -4,8 +4,6 @@ import { TestContext, describe, it, after } from "node:test";
 import { app } from "..";
 import { db } from "../utils/db";
 
-after(() => app.close());
-
 describe("User Concern", () => {
     let createdUserId: string;
     let currentAccessToken: string;
@@ -109,10 +107,12 @@ describe("User Concern", () => {
 
     after(async () => {
         if (!createdUserId) {
+            app.unsignCookie(currentAccessToken);
             await db.$disconnect();
             return;
         }
 
+        app.unsignCookie(currentAccessToken);
         await db.user.delete({
             where: {
                 id: createdUserId,
@@ -121,3 +121,5 @@ describe("User Concern", () => {
         await db.$disconnect();
     });
 });
+
+after(() => app.close());
